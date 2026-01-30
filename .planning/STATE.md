@@ -1,7 +1,7 @@
 # Project State: Multi LLM Provider Support
 
-**Current Phase:** Phase 1 Complete ✓
-**Last Updated:** 2025-01-30
+**Current Phase:** Phase 2 In Progress
+**Last Updated:** 2026-01-30
 
 ## Project Reference
 
@@ -15,7 +15,7 @@ See: .planning/PROJECT.md (updated 2025-01-30)
 | Phase | Status | Plans | Progress |
 |-------|--------|-------|----------|
 | 1: Provider Foundation | ✓ Complete | 2 | 100% |
-| 2: Additional Providers | ○ Planned | 3 | 0% |
+| 2: Additional Providers | ○ In Progress | 3 | 33% |
 | 3: CLI and Multi-Model Runner | ○ Planned | 3 | 0% |
 | 4: Integration and Backward Compatibility | ○ Planned | 2 | 0% |
 
@@ -33,10 +33,21 @@ See: .planning/PROJECT.md (updated 2025-01-30)
 1. **Instance-based registry** — ProviderRegistry uses instance-level `_providers` dict to avoid test pollution
 2. **Class-level provider classes** — `ProviderRegistry._provider_classes` is class-level for `from_env()` access
 3. **Lazy model initialization** — Providers create model/client on first access
+4. **Claude uses OpenAI-compatible format** — Third-party Claude proxies use OpenAI-compatible API format
+5. **All providers registered together** — minimax, claude, openai all registered in unified registry
 
 ### Open Questions
 
-1. Claude 第三方中转是否使用 OpenAI 兼容格式？
+1. ~~Claude 第三方中转是否使用 OpenAI 兼容格式？~~ ✓ Resolved: Yes, uses OpenAI-compatible format
 2. 是否需要并发执行多个模型？
+
+## Current Position
+
+**Phase:** 2 of 4 (Additional Providers)
+**Plan:** 01 of 03 (OpenAI Provider) - Complete
+**Status:** In Progress
+**Last activity:** 2026-01-30 - Completed phase-2-01-PLAN.md
+
+Progress: [███░░░░░░░░░░░░░░░] 17% (2/12 plans complete)
 
 ---
