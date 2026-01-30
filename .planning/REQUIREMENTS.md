@@ -9,8 +9,8 @@
 
 - [x] **PROV-01**: 定义 LLMProvider 抽象基类，统一接口
 - [x] **PROV-02**: 实现 MiniMaxProvider（迁移现有功能）
-- [ ] **PROV-03**: 实现 OpenAIProvider（支持第三方中转）
-- [ ] **PROV-04**: 实现 ClaudeProvider（支持第三方中转）
+- [x] **PROV-03**: 实现 OpenAIProvider（支持第三方中转）
+- [x] **PROV-04**: 实现 ClaudeProvider（支持第三方中转）
 - [x] **PROV-05**: 实现 ProviderRegistry 管理所有 Provider
 
 ### 配置管理
@@ -63,8 +63,8 @@
 |-------------|-------|--------|
 | PROV-01 | Phase 1 | Complete |
 | PROV-02 | Phase 1 | Complete |
-| PROV-03 | Phase 2 | Pending |
-| PROV-04 | Phase 2 | Pending |
+| PROV-03 | Phase 2 | Complete |
+| PROV-04 | Phase 2 | Complete |
 | PROV-05 | Phase 1 | Complete |
 | CONF-01 | Phase 1 | Complete |
 | CONF-02 | Phase 1 | Complete |
