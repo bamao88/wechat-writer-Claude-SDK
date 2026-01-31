@@ -52,7 +52,7 @@ Plans:
 - [x] 01-PLAN.md — OpenAI provider implementation
 - [x] 02-PLAN.md — Claude provider implementation
 - [x] 03-PLAN.md — Provider registration and integration
-- [ ] 04-PLAN.md — Real API testing for all providers
+- [x] 04-PLAN.md — Real API testing for all providers
 
 **Details:**
 Implement the remaining providers. Need to verify the exact API format for user's third-party Claude proxy (OpenAI-compatible or native Anthropic format).
