@@ -1,7 +1,7 @@
 # Project State: Multi LLM Provider Support
 
 **Current Phase:** Phase 2 Complete ✓
-**Last Updated:** 2026-01-30
+**Last Updated:** 2026-01-31
 
 ## Project Reference
 
@@ -15,7 +15,7 @@ See: .planning/PROJECT.md (updated 2025-01-30)
 | Phase | Status | Plans | Progress |
 |-------|--------|-------|----------|
 | 1: Provider Foundation | ✓ Complete | 2 | 100% |
-| 2: Additional Providers | ✓ Complete | 3 | 100% |
+| 2: Additional Providers | ✓ Complete | 4 | 100% |
 | 3: CLI and Multi-Model Runner | ○ Planned | 3 | 0% |
 | 4: Integration and Backward Compatibility | ○ Planned | 2 | 0% |
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2025-01-30)
 - 4 phases defined covering 16 requirements
 - All phases planned with detailed PLAN.md files
 - **Phase 1 completed** — Provider abstraction and MiniMax implementation done
-- **Phase 2 completed** — All three providers (MiniMax, OpenAI, Claude) implemented and registered
+- **Phase 2 completed** — All three providers (MiniMax, OpenAI, Claude) implemented and registered with real API integration tests
 
 ### Decisions Made
 
@@ -38,6 +38,8 @@ See: .planning/PROJECT.md (updated 2025-01-30)
 5. **All providers registered together** — minimax, claude, openai all registered in unified registry
 6. **Consistent provider pattern** — All providers follow identical structure: from_config() factory, lazy create_model(), config/display_name properties
 7. **Environment-based configuration** — All providers load from environment variables with consistent naming convention (PROVIDER_API_KEY, PROVIDER_BASE_URL, PROVIDER_MODEL)
+8. **Conditional test skipping** — Integration tests use `@pytest.mark.skipif` to gracefully skip when credentials are not configured
+9. **Integration test marker** — Custom pytest marker registered in conftest.py to avoid warnings
 
 ### Open Questions
 
@@ -47,10 +49,10 @@ See: .planning/PROJECT.md (updated 2025-01-30)
 ## Current Position
 
 **Phase:** 2 of 4 (Additional Providers) - Complete
-**Plan:** 03 of 03 (OpenAI and Claude Providers) - Complete
+**Plan:** 04 of 04 (Real API Testing) - Complete
 **Status:** Complete
-**Last activity:** 2026-01-30 - Completed phase-2-03-PLAN.md
+**Last activity:** 2026-01-31 - Completed phase-2-04 real API integration tests
 
-Progress: [████░░░░░░░░░░░░░░] 25% (3/12 plans complete)
+Progress: [██████░░░░░░░░░░░░] 33% (4/12 plans complete)
 
 ---
