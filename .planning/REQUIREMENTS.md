@@ -1,89 +1,95 @@
-# Requirements: Multi LLM Provider Support
+# Requirements: AI 写作助手
 
-**Defined:** 2025-01-30
-**Core Value:** 用户可以通过简单的命令行交互，选择一个或多个模型为同一选题生成文章
+**Defined:** 2026-02-03
+**Core Value:** 能够调用 NotebookLM 搜索资料并完成端到端的文章生成流程，验证「研究 → 规划 → 写作」的完整闭环可行性。
 
 ## v1 Requirements
 
-### Provider 抽象层
+### CLI Interface
 
-- [x] **PROV-01**: 定义 LLMProvider 抽象基类，统一接口
-- [x] **PROV-02**: 实现 MiniMaxProvider（迁移现有功能）
-- [x] **PROV-03**: 实现 OpenAIProvider（支持第三方中转）
-- [x] **PROV-04**: 实现 ClaudeProvider（支持第三方中转）
-- [x] **PROV-05**: 实现 ProviderRegistry 管理所有 Provider
+- [ ] **CLI-01**: 用户可以通过命令行传入选题参数启动写作流程
 
-### 配置管理
+### NotebookLM Integration
 
-- [x] **CONF-01**: 支持 .env 配置多 Provider（API key、base_url、model）
-- [x] **CONF-02**: 配置验证，检查必需字段
-- [x] **CONF-03**: 运行时从环境变量加载所有可用 Provider
+- [ ] **NBK-01**: 系统可以将 NotebookLM MCP Tool 集成到 Claude SDK 中
+- [ ] **NBK-02**: Agent 可以调用 NotebookLM Tool 搜索相关资料
 
-### CLI 交互
+### Research Phase
 
-- [ ] **CLI-01**: 交互式模型选择（单选/多选/全选）
-- [ ] **CLI-02**: 显示可用模型列表
-- [ ] **CLI-03**: 支持命令行参数指定模型（非交互式）
+- [ ] **RSH-01**: Agent 可以基于选题搜索 NotebookLM 笔记本获取资料
+- [ ] **RSH-02**: Agent 可以将搜索结果整理成调研报告
 
-### 多模型运行
+### Outline Generation
 
-- [ ] **RUN-01**: 支持串行运行多个模型
-- [ ] **RUN-02**: 每个模型独立生成文章并保存
-- [ ] **RUN-03**: 输出汇总报告（各模型状态、输出路径）
+- [ ] **OTL-01**: Agent 可以基于调研结果生成文章大纲
 
-### 向后兼容
+### Article Writing
 
-- [ ] **COMPAT-01**: 现有 main.py 接口保持可用
-- [ ] **COMPAT-02**: 无参数时默认行为不变（使用 MiniMax）
+- [ ] **ART-01**: Agent 可以基于大纲生成完整文章内容
+
+### Output Management
+
+- [ ] **OUT-01**: 系统可以保存调研结果到文件
+- [ ] **OUT-02**: 系统可以保存大纲到文件
+- [ ] **OUT-03**: 系统可以保存最终文章到文件
 
 ## v2 Requirements
 
-### 性能优化
+Deferred to future release. Tracked but not in current roadmap.
 
-- **PERF-01**: 支持并发运行多个模型
-- **PERF-02**: 添加超时控制
+### Multi-Model Support
 
-### 输出增强
+- **MLM-01**: 通过 LiteLLM 支持 OpenAI API
+- **MLM-02**: 通过 LiteLLM 支持 Minimax API
+- **MLM-03**: 用户可以配置使用不同的 AI 模型
 
-- **OUT-01**: 生成对比报告（各模型输出摘要）
-- **OUT-02**: 支持自定义输出文件名模板
+### Multi-Agent Architecture
+
+- **MAG-01**: 实现研究员 Agent 专门负责资料搜索
+- **MAG-02**: 实现写作 Agent 专门负责内容生成
+- **MAG-03**: 实现 Agent 间的协调和数据传递
+
+### CLI Enhancement
+
+- **CLE-01**: 支持 --output 参数指定输出目录
+- **CLE-02**: 支持 --model 参数指定 AI 模型
+- **CLE-03**: 支持 --notebook-id 参数指定 NotebookLM 笔记本
+- **CLE-04**: 支持交互式模式逐步引导用户
 
 ## Out of Scope
 
+Explicitly excluded. Documented to prevent scope creep.
+
 | Feature | Reason |
 |---------|--------|
-| Web UI | 保持 CLI 工具定位 |
-| 模型自动评分 | 用户自行判断质量 |
-| 非 OpenAI 兼容格式 | 第三方中转通常都提供兼容格式 |
-| 流式输出 | 保持现有批量模式 |
+| API 服务接口 | v1 仅需 CLI 工具，服务化延后 |
+| 实时网页抓取 | v1 聚焦 NotebookLM 笔记本，避免复杂度 |
+| 本地文档搜索 | v1 仅使用已有 NotebookLM 笔记本 |
+| Python SDK 封装 | v1 聚焦验证流程，不做库封装 |
+| 用户认证系统 | 个人工具，无需认证 |
 
 ## Traceability
 
+Which phases cover which requirements. Updated during roadmap creation.
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROV-01 | Phase 1 | Complete |
-| PROV-02 | Phase 1 | Complete |
-| PROV-03 | Phase 2 | Complete |
-| PROV-04 | Phase 2 | Complete |
-| PROV-05 | Phase 1 | Complete |
-| CONF-01 | Phase 1 | Complete |
-| CONF-02 | Phase 1 | Complete |
-| CONF-03 | Phase 1 | Complete |
-| CLI-01 | Phase 3 | Pending |
-| CLI-02 | Phase 3 | Pending |
-| CLI-03 | Phase 3 | Pending |
-| RUN-01 | Phase 3 | Pending |
-| RUN-02 | Phase 3 | Pending |
-| RUN-03 | Phase 3 | Pending |
-| COMPAT-01 | Phase 4 | Pending |
-| COMPAT-02 | Phase 4 | Pending |
+| CLI-01 | TBD | Pending |
+| NBK-01 | TBD | Pending |
+| NBK-02 | TBD | Pending |
+| RSH-01 | TBD | Pending |
+| RSH-02 | TBD | Pending |
+| OTL-01 | TBD | Pending |
+| ART-01 | TBD | Pending |
+| OUT-01 | TBD | Pending |
+| OUT-02 | TBD | Pending |
+| OUT-03 | TBD | Pending |
 
 **Coverage:**
-- v1 requirements: 15 total
-- Phase 1 Complete: 7 requirements
-- Remaining: 8 requirements
-- Unmapped: 0 ✓
+- v1 requirements: 10 total
+- Mapped to phases: 0
+- Unmapped: 10 ⚠️
 
 ---
-*Requirements defined: 2025-01-30*
-*Last updated: 2025-01-30 after Phase 1 completion*
+*Requirements defined: 2026-02-03*
+*Last updated: 2026-02-03 after initial definition*
