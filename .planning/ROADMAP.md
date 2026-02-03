@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Python CLI writing assistant that validates the complete "research → plan → write" loop using Claude SDK and NotebookLM integration. Three phases deliver: (1) CLI interface and tool integration foundation, (2) end-to-end agent workflow from research to article generation, (3) output management for all intermediate artifacts.
+A Python CLI writing assistant that validates the complete "research -> plan -> write" loop using Claude SDK and NotebookLM integration. Three phases deliver: (1) CLI interface and tool integration foundation, (2) end-to-end agent workflow from research to article generation, (3) output management for all intermediate artifacts.
 
 ## Phases
 
@@ -26,10 +26,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. User can run `python main.py "选题"` and the process starts
   2. Agent can successfully call NotebookLM MCP Tool through Claude SDK (using notebooklm-mcp-cli: https://github.com/jacob-bd/notebooklm-mcp-cli)
   3. Agent receives and can process NotebookLM search results
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: TBD during planning
+- [ ] 01-01-PLAN.md — TDD: Config loading + Logger (foundation utilities)
+- [ ] 01-02-PLAN.md — TDD: CLI argument parsing with Chinese UX
+- [ ] 01-03-PLAN.md — TDD: NotebookLM tool wrapper with retry logic
+- [ ] 01-04-PLAN.md — Integration: Wire CLI -> Agent -> Tool -> Claude SDK
 
 ### Phase 2: Agent Workflow
 **Goal**: Agent completes full research-outline-article generation loop
@@ -63,10 +66,10 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation Setup | 0/TBD | Not started | - |
+| 1. Foundation Setup | 0/4 | Planned | - |
 | 2. Agent Workflow | 0/TBD | Not started | - |
 | 3. Output System | 0/TBD | Not started | - |
