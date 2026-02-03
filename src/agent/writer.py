@@ -8,8 +8,20 @@ from anthropic import Anthropic
 from src.config.settings import Config
 from src.tools.notebooklm import NotebookLMTool, ToolResult
 from src.utils.logger import get_logger
+from src.utils.prompt_loader import load_prompt, PromptError
 
 logger = get_logger(__name__)
+
+# Production workflow requires multiple research rounds
+# prompt_run.txt flow: 1st search -> 2nd search -> (optional 3rd) -> outline -> write
+# Each search + response = 2 iterations, so need ~15 for safety
+MAX_ITERATIONS_PRODUCTION = 15
+
+# Articles can be 3000-5000 characters; with Chinese + formatting, need ~8000 tokens
+MAX_TOKENS_PRODUCTION = 8192
+
+# Default prompt file name
+DEFAULT_PROMPT = "prompt_run.txt"
 
 
 @dataclass
@@ -28,7 +40,8 @@ class WritingAgent:
         self,
         config: Config,
         api_key: Optional[str] = None,
-        base_url: Optional[str] = None
+        base_url: Optional[str] = None,
+        prompt_name: Optional[str] = None
     ):
         """Initialize the agent.
 
@@ -36,9 +49,11 @@ class WritingAgent:
             config: Application configuration.
             api_key: Claude API key (defaults to CLAUDE_API_KEY env var).
             base_url: Claude API base URL (defaults to CLAUDE_BASE_URL env var).
+            prompt_name: Name of prompt file in prompts/ (defaults to prompt_run.txt).
         """
         self.config = config
         self.tool = NotebookLMTool(config)
+        self.prompt_name = prompt_name or DEFAULT_PROMPT
 
         # Initialize Claude client
         self.client = Anthropic(
@@ -80,7 +95,7 @@ class WritingAgent:
 
         Args:
             topic: Writing topic from user.
-            system_prompt: Optional system prompt (defaults to basic assistant).
+            system_prompt: Optional system prompt (overrides prompt file).
             on_progress: Optional callback for progress updates.
 
         Returns:
@@ -89,29 +104,36 @@ class WritingAgent:
         if on_progress:
             on_progress("[开始] 正在初始化...")
 
-        # Default system prompt for Phase 1 (basic test)
+        # Load system prompt from file or use provided
         if system_prompt is None:
-            system_prompt = """你是一个写作助手。当用户给你一个选题时，
-你需要先使用 search_notebooklm 工具搜索相关资料，
-然后基于搜索结果给出一个简短的回复，说明你找到了什么资料。
-这是Phase 1测试，只需要验证工具调用成功即可。"""
+            try:
+                system_prompt = load_prompt(self.prompt_name)
+                logger.info(f"已加载系统prompt: {self.prompt_name}")
+            except PromptError as e:
+                logger.error(f"Prompt加载失败: {e}")
+                return AgentResult(
+                    success=False,
+                    output="",
+                    tool_calls=0,
+                    error=f"Prompt加载失败: {e}"
+                )
 
+        # User message - just the topic, prompt handles workflow
         messages = [
-            {"role": "user", "content": f"我要写一篇关于「{topic}」的文章，请先搜索一下相关资料。"}
+            {"role": "user", "content": f"选题：{topic}"}
         ]
 
         tools = [self.tool.to_claude_tool()]
         tool_call_count = 0
-        max_iterations = 5  # Prevent infinite loops
 
         try:
-            for iteration in range(max_iterations):
+            for iteration in range(MAX_ITERATIONS_PRODUCTION):
                 if on_progress:
                     on_progress(f"[对话] 第{iteration + 1}轮...")
 
                 response = self.client.messages.create(
                     model=self.model,
-                    max_tokens=4096,
+                    max_tokens=MAX_TOKENS_PRODUCTION,
                     system=system_prompt,
                     messages=messages,
                     tools=tools
@@ -183,28 +205,35 @@ class WritingAgent:
             )
 
 
-def create_agent(config: Config) -> WritingAgent:
+def create_agent(config: Config, prompt_name: Optional[str] = None) -> WritingAgent:
     """Factory function to create an agent.
 
     Args:
         config: Application configuration.
+        prompt_name: Optional prompt file name.
 
     Returns:
         Configured WritingAgent instance.
     """
-    return WritingAgent(config)
+    return WritingAgent(config, prompt_name=prompt_name)
 
 
-def run_agent(topic: str, config: Config, on_progress: Optional[Callable[[str], None]] = None) -> AgentResult:
+def run_agent(
+    topic: str,
+    config: Config,
+    prompt_name: Optional[str] = None,
+    on_progress: Optional[Callable[[str], None]] = None
+) -> AgentResult:
     """Convenience function to create and run an agent.
 
     Args:
         topic: Writing topic.
         config: Application configuration.
+        prompt_name: Optional prompt file name.
         on_progress: Optional progress callback.
 
     Returns:
         AgentResult from agent execution.
     """
-    agent = create_agent(config)
+    agent = create_agent(config, prompt_name=prompt_name)
     return agent.run(topic, on_progress=on_progress)
