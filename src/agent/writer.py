@@ -1,12 +1,11 @@
-"""Writing assistant agent using Claude SDK with tool support."""
-import os
+"""Writing assistant agent with multi-backend LLM (Anthropic/MiniMax + OpenAI)."""
 from typing import Optional, Callable, TYPE_CHECKING
 from dataclasses import dataclass
 
-from anthropic import Anthropic
-
 from src.config.settings import Config
-from src.tools.notebooklm import NotebookLMTool, ToolResult
+from src.agent.backends import get_backend
+from src.agent.backends.base import BackendResponse
+from src.tools.notebooklm import NotebookLMTool
 from src.utils.logger import get_logger
 from src.utils.prompt_loader import load_prompt, PromptError
 
@@ -17,11 +16,7 @@ logger = get_logger(__name__)
 
 # prompt_run.txt flow: 1 tool call (search) -> then analysis + outline + full article in one turn
 MAX_ITERATIONS_PRODUCTION = 15
-
-# Articles can be 3000-5000 characters; with Chinese + formatting, need ~8000 tokens
 MAX_TOKENS_PRODUCTION = 8192
-
-# Default prompt file name
 DEFAULT_PROMPT = "prompt_run.txt"
 
 
@@ -34,73 +29,44 @@ class AgentResult:
     error: Optional[str] = None
 
 
+def _tool_to_def(tool: NotebookLMTool) -> dict:
+    """Build normalized tool def (name, description, parameters) for backends."""
+    return {
+        "name": tool.name,
+        "description": tool.description,
+        "parameters": tool.input_schema,
+    }
+
+
 class WritingAgent:
-    """Writing assistant agent that uses Claude with NotebookLM tool."""
+    """Writing assistant: NotebookLM tool + configurable LLM backend (Anthropic/MiniMax or OpenAI)."""
 
     def __init__(
         self,
         config: Config,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        prompt_name: Optional[str] = None
+        prompt_name: Optional[str] = None,
     ):
         """Initialize the agent.
 
         Args:
-            config: Application configuration.
-            api_key: Claude API key (defaults to ANTHROPIC_API_KEY env var).
-            base_url: Claude API base URL (defaults to ANTHROPIC_BASE_URL env var).
+            config: Application configuration (llm_provider: anthropic | openai).
             prompt_name: Name of prompt file in prompts/ (defaults to prompt_run.txt).
         """
         self.config = config
         self.tool = NotebookLMTool(config)
         self.prompt_name = prompt_name or DEFAULT_PROMPT
-
-        # Prefer project-prefixed env vars so .env overrides shell (e.g. shell may set ANTHROPIC_BASE_URL for Claude Code proxy)
-        base_url_val = (
-            base_url
-            or os.getenv("WECHAT_WRITER_ANTHROPIC_BASE_URL")
-            or os.getenv("ANTHROPIC_BASE_URL")
-        )
-        if base_url_val:
-            base_url_val = base_url_val.rstrip("/").strip()
-        api_key_val = (
-            api_key
-            or os.getenv("WECHAT_WRITER_ANTHROPIC_API_KEY")
-            or os.getenv("ANTHROPIC_API_KEY")
-        ) or ""
-        api_key_val = api_key_val.strip()
-        self.client = Anthropic(
-            api_key=api_key_val,
-            base_url=base_url_val
-        )
-
-        self.model = (
-            os.getenv("WECHAT_WRITER_ANTHROPIC_MODEL")
-            or os.getenv("ANTHROPIC_MODEL")
-            or "claude-haiku-4-5-20251001"
-        )
+        self.backend = get_backend(config.llm_provider)
+        logger.info(f"LLM 后端: {config.llm_provider}")
 
     def _handle_tool_call(self, tool_name: str, tool_input: dict) -> str:
-        """Handle a tool call from Claude.
-
-        Args:
-            tool_name: Name of the tool to call.
-            tool_input: Input parameters for the tool.
-
-        Returns:
-            Tool result as string.
-        """
+        """Handle a tool call from the model."""
         if tool_name == self.tool.name:
             query = tool_input.get("query", "")
             logger.info(f"[NotebookLM] 搜索: {query[:50]}...")
             result = self.tool.execute(query=query)
-
             if result.success:
                 return result.content
-            else:
-                return f"搜索失败: {result.error}"
-
+            return f"搜索失败: {result.error}"
         return f"未知工具: {tool_name}"
 
     def run(
@@ -110,40 +76,20 @@ class WritingAgent:
         on_progress: Optional[Callable[[str], None]] = None,
         tracer: Optional["OutputTracer"] = None
     ) -> AgentResult:
-        """Run the agent with a topic.
-
-        Args:
-            topic: Writing topic from user.
-            system_prompt: Optional system prompt (overrides prompt file).
-            on_progress: Optional callback for progress updates.
-            tracer: Optional OutputTracer for thought_trace.md and article.md.
-
-        Returns:
-            AgentResult with output and statistics.
-        """
+        """Run the agent with a topic."""
         if on_progress:
             on_progress("[开始] 正在初始化...")
 
-        # Load system prompt from file or use provided
         if system_prompt is None:
             try:
                 system_prompt = load_prompt(self.prompt_name)
                 logger.info(f"已加载系统prompt: {self.prompt_name}")
             except PromptError as e:
                 logger.error(f"Prompt加载失败: {e}")
-                return AgentResult(
-                    success=False,
-                    output="",
-                    tool_calls=0,
-                    error=f"Prompt加载失败: {e}"
-                )
+                return AgentResult(success=False, output="", tool_calls=0, error=f"Prompt加载失败: {e}")
 
-        # User message - just the topic, prompt handles workflow
-        messages = [
-            {"role": "user", "content": f"选题：{topic}"}
-        ]
-
-        tools = [self.tool.to_claude_tool()]
+        tools = [_tool_to_def(self.tool)]
+        messages: list = [{"role": "user", "content": f"选题：{topic}"}]
         tool_call_count = 0
 
         try:
@@ -151,99 +97,77 @@ class WritingAgent:
                 if on_progress:
                     on_progress(f"[对话] 第{iteration + 1}轮...")
 
-                response = self.client.messages.create(
-                    model=self.model,
-                    max_tokens=MAX_TOKENS_PRODUCTION,
+                resp: BackendResponse = self.backend.create(
                     system=system_prompt,
                     messages=messages,
-                    tools=tools
+                    tools=tools,
+                    max_tokens=MAX_TOKENS_PRODUCTION,
                 )
 
-                # Append agent output to trace (text parts of response)
-                final_text = ""
-                for block in response.content:
-                    if hasattr(block, "text"):
-                        final_text += block.text
-                if tracer and final_text:
-                    tracer.append_agent_output(final_text)
+                if tracer and resp.content_text:
+                    tracer.append_agent_output(resp.content_text)
 
-                # Check stop reason
-                if response.stop_reason == "end_turn":
-                    # Agent finished: save article and return
+                if resp.stop_reason == "end_turn":
                     if tracer:
-                        tracer.save_article(final_text)
+                        tracer.save_article(resp.content_text)
                         tracer.close()
                     if on_progress:
                         on_progress("[完成]")
                     return AgentResult(
                         success=True,
-                        output=final_text,
-                        tool_calls=tool_call_count
+                        output=resp.content_text,
+                        tool_calls=tool_call_count,
                     )
 
-                elif response.stop_reason == "tool_use":
-                    # Handle tool calls and record in trace
-                    assistant_content = response.content
-                    tool_results = []
-
-                    for block in assistant_content:
-                        if block.type == "tool_use":
-                            tool_call_count += 1
-                            if on_progress:
-                                on_progress(f"[工具] 调用 {block.name}...")
-                            if tracer:
-                                tracer.append_tool_call(block.name, getattr(block, "input", {}) or {})
-
-                            result = self._handle_tool_call(
-                                block.name,
-                                block.input
-                            )
-                            if tracer:
-                                tracer.append_tool_result(result)
-
-                            tool_results.append({
-                                "type": "tool_result",
-                                "tool_use_id": block.id,
-                                "content": result
-                            })
-
-                    # Add assistant response and tool results to messages
-                    messages.append({"role": "assistant", "content": assistant_content})
+                if resp.stop_reason == "tool_use" and resp.tool_calls:
+                    tool_results: list = []
+                    assistant_content = resp.content_text
+                    assistant_tool_calls = [
+                        {"id": tc.id, "name": tc.name, "input": tc.input}
+                        for tc in resp.tool_calls
+                    ]
+                    for tc in resp.tool_calls:
+                        tool_call_count += 1
+                        if on_progress:
+                            on_progress(f"[工具] 调用 {tc.name}...")
+                        if tracer:
+                            tracer.append_tool_call(tc.name, tc.input)
+                        result = self._handle_tool_call(tc.name, tc.input)
+                        if tracer:
+                            tracer.append_tool_result(result)
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": tc.id,
+                            "content": result,
+                        })
+                    messages.append({
+                        "role": "assistant",
+                        "content": assistant_content,
+                        "tool_calls": assistant_tool_calls,
+                    })
                     messages.append({"role": "user", "content": tool_results})
-
                 else:
-                    # Unexpected stop reason
-                    logger.warning(f"意外的停止原因: {response.stop_reason}")
+                    logger.warning(f"意外的停止原因: {resp.stop_reason}")
                     break
 
-            # Max iterations reached
             return AgentResult(
                 success=False,
                 output="",
                 tool_calls=tool_call_count,
-                error="达到最大对话轮数限制"
+                error="达到最大对话轮数限制",
             )
-
         except Exception as e:
             logger.error(f"Agent执行错误: {e}")
             return AgentResult(
                 success=False,
                 output="",
                 tool_calls=tool_call_count,
-                error=str(e)
+                error=str(e),
             )
 
 
 def create_agent(config: Config, prompt_name: Optional[str] = None) -> WritingAgent:
-    """Factory function to create an agent.
-
-    Args:
-        config: Application configuration.
-        prompt_name: Optional prompt file name.
-
-    Returns:
-        Configured WritingAgent instance.
-    """
+    """Create a configured WritingAgent."""
     return WritingAgent(config, prompt_name=prompt_name)
 
 
@@ -254,17 +178,6 @@ def run_agent(
     on_progress: Optional[Callable[[str], None]] = None,
     tracer: Optional["OutputTracer"] = None
 ) -> AgentResult:
-    """Convenience function to create and run an agent.
-
-    Args:
-        topic: Writing topic.
-        config: Application configuration.
-        prompt_name: Optional prompt file name.
-        on_progress: Optional progress callback.
-        tracer: Optional OutputTracer for thought_trace and article.
-
-    Returns:
-        AgentResult from agent execution.
-    """
+    """Convenience: create agent and run with topic."""
     agent = create_agent(config, prompt_name=prompt_name)
     return agent.run(topic, on_progress=on_progress, tracer=tracer)

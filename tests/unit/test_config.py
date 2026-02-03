@@ -82,6 +82,23 @@ class TestLoadConfig:
         config = load_config()
         assert config.notebooklm_skill_dir is None
 
+    def test_llm_provider_defaults_to_anthropic(self, monkeypatch):
+        """Config llm_provider defaults to anthropic."""
+        monkeypatch.setenv("NOTEBOOK_ID", "id")
+        monkeypatch.setenv("NOTEBOOK_URL", "url")
+        monkeypatch.delenv("WECHAT_WRITER_LLM_PROVIDER", raising=False)
+        monkeypatch.delenv("LLM_PROVIDER", raising=False)
+        config = load_config()
+        assert config.llm_provider == "anthropic"
+
+    def test_llm_provider_from_env(self, monkeypatch):
+        """Config llm_provider can be set to openai."""
+        monkeypatch.setenv("NOTEBOOK_ID", "id")
+        monkeypatch.setenv("NOTEBOOK_URL", "url")
+        monkeypatch.setenv("WECHAT_WRITER_LLM_PROVIDER", "openai")
+        config = load_config()
+        assert config.llm_provider == "openai"
+
     def test_missing_notebook_id_raises_error(self, monkeypatch):
         """Missing NOTEBOOK_ID raises ConfigError."""
         # Clear all NotebookLM env vars to ensure clean state
@@ -134,6 +151,7 @@ class TestConfig:
             timeout_sec=120,
             log_level="INFO",
             notebooklm_skill_dir=None,
+            llm_provider="anthropic",
         )
         assert config.notebook_id == "id"
         assert config.timeout_sec == 120

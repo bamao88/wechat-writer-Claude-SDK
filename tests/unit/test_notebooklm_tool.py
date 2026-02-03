@@ -28,6 +28,7 @@ def mock_config(tmp_path):
         timeout_sec=30,
         log_level="INFO",
         notebooklm_skill_dir=str(tmp_path),
+        llm_provider="anthropic",
     )
 
 
@@ -46,6 +47,7 @@ def mock_config_with_venv(tmp_path):
         timeout_sec=30,
         log_level="INFO",
         notebooklm_skill_dir=str(tmp_path),
+        llm_provider="anthropic",
     )
 
 
@@ -60,6 +62,7 @@ def mock_config_no_script(tmp_path):
         timeout_sec=30,
         log_level="INFO",
         notebooklm_skill_dir=str(tmp_path),
+        llm_provider="anthropic",
     )
 
 

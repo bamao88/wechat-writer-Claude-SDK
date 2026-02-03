@@ -10,7 +10,7 @@
 
 ```
 wechat-writer-Claude-SDK/
-├── .env                           ✓ 环境变量（含 WECHAT_WRITER_ANTHROPIC_*、NOTEBOOKLM_SKILL_DIR 等）
+├── .env                           ✓ 环境变量（LLM_PROVIDER、ANTHROPIC/OPENAI 等，见下方配置说明）
 ├── .gitignore                     ✓ Git 忽略规则
 ├── requirements.txt               ✓ Python 依赖
 ├── main.py                        ✓ CLI 入口
@@ -35,7 +35,7 @@ wechat-writer-Claude-SDK/
 │   ├── __init__.py
 │   ├── config/
 │   │   ├── __init__.py
-│   │   └── settings.py            ✓ 配置（含 notebooklm_skill_dir）
+│   │   └── settings.py            ✓ 配置（含 notebooklm_skill_dir、llm_provider）
 │   ├── utils/
 │   │   ├── __init__.py
 │   │   ├── logger.py
@@ -48,7 +48,12 @@ wechat-writer-Claude-SDK/
 │   │   └── notebooklm.py          ✓ NotebookLM 工具（Skill 方案，优先 .venv/bin/python）
 │   ├── agent/
 │   │   ├── __init__.py
-│   │   └── writer.py              ✓ 写作 Agent（支持 tracer）
+│   │   ├── writer.py              ✓ 写作 Agent（按 config.llm_provider 选后端）
+│   │   └── backends/              ✓ LLM 多后端
+│   │       ├── __init__.py        ✓ get_backend(provider)
+│   │       ├── base.py            ✓ 统一接口 BackendResponse / LLMBackend
+│   │       ├── anthropic_.py      ✓ Anthropic + MiniMax（官方 Anthropic 兼容）
+│   │       └── openai_.py         ✓ OpenAI / OpenAI 兼容端点
 │   └── output/                    ✓ Phase 3 输出
 │       ├── __init__.py            ✓ create_output_dir, topic_to_slug
 │       └── tracer.py             ✓ thought_trace.md + article.md
@@ -152,15 +157,32 @@ wechat-writer-Claude-SDK/
 
 ## 关键配置说明
 
-### Claude API（本项目专用，不受 shell 代理影响）
+### LLM 后端（provider）
 
 | 变量 | 说明 |
 |------|------|
-| `WECHAT_WRITER_ANTHROPIC_BASE_URL` | 本项目 API 地址（建议 `https://api.anthropic.com`） |
-| `WECHAT_WRITER_ANTHROPIC_API_KEY` | 本项目 API Key |
-| `WECHAT_WRITER_ANTHROPIC_MODEL` | 模型（如 `claude-haiku-4-5-20251001`） |
+| `WECHAT_WRITER_LLM_PROVIDER` 或 `LLM_PROVIDER` | `anthropic`（默认）或 `openai` |
 
-未设置时回退到 `ANTHROPIC_*`。若在 `~/.zshrc` 或 Claude Code 中设置了 `ANTHROPIC_BASE_URL`（如代理），本项目仍以 `.env` 中的 `WECHAT_WRITER_*` 为准。
+- **anthropic**：使用 Anthropic 后端。适用于 Anthropic 官方 API 与 **MiniMax**（MiniMax 提供 [Anthropic 兼容](https://platform.minimaxi.com/docs/api-reference/text-anthropic-api)，只需改 base_url + api_key + model，无需单独后端）。
+- **openai**：使用 OpenAI 后端，适用于 OpenAI 官方或第三方 OpenAI 兼容端点。
+
+### Anthropic 后端（anthropic / MiniMax）
+
+| 变量 | 说明 |
+|------|------|
+| `WECHAT_WRITER_ANTHROPIC_BASE_URL` | API 地址（Anthropic: `https://api.anthropic.com`；MiniMax: `https://api.minimaxi.com/anthropic`） |
+| `WECHAT_WRITER_ANTHROPIC_API_KEY` | API Key |
+| `WECHAT_WRITER_ANTHROPIC_MODEL` | 模型（Anthropic 如 `claude-haiku-4-5-20251001`；MiniMax 如 `MiniMax-M2.1`） |
+
+未设置时回退到 `ANTHROPIC_*`。本项目优先读 `WECHAT_WRITER_*`，不受 shell 中 `ANTHROPIC_BASE_URL` 等影响。
+
+### OpenAI 后端（openai）
+
+| 变量 | 说明 |
+|------|------|
+| `WECHAT_WRITER_OPENAI_BASE_URL` 或 `OPENAI_BASE_URL` | API 地址（可选，第三方中转时必填） |
+| `WECHAT_WRITER_OPENAI_API_KEY` 或 `OPENAI_API_KEY` | API Key |
+| `WECHAT_WRITER_OPENAI_MODEL` 或 `OPENAI_MODEL` | 模型（如 `gpt-4o`） |
 
 ### NotebookLM Skill
 
@@ -178,12 +200,13 @@ Skill 需在对应目录下执行一次认证（如 `notebooklm_skill/.venv/bin/
 | 文件 | 功能 |
 |------|------|
 | `main.py` | CLI 入口 |
-| `src/config/settings.py` | 配置（含 `notebooklm_skill_dir`） |
+| `src/config/settings.py` | 配置（含 `notebooklm_skill_dir`、`llm_provider`） |
 | `src/utils/logger.py` | 日志 |
 | `src/utils/prompt_loader.py` | Prompt 加载 |
 | `src/cli/parser.py` | 命令行解析 |
 | `src/tools/notebooklm.py` | NotebookLM（Skill 方案，优先 Skill .venv） |
-| `src/agent/writer.py` | 写作 Agent（支持 tracer） |
+| `src/agent/writer.py` | 写作 Agent（按 config.llm_provider 选后端，支持 tracer） |
+| `src/agent/backends/` | LLM 多后端（Anthropic/MiniMax + OpenAI） |
 | `src/output/` | 输出目录创建、thought_trace、article 持久化 |
 | `scripts/test_anthropic_api.py` | Anthropic API 连通性测试 |
 

@@ -21,6 +21,7 @@ class Config:
     timeout_sec: int
     log_level: str
     notebooklm_skill_dir: Optional[str]  # Skill root, default ~/.claude/skills/notebooklm
+    llm_provider: str  # "anthropic" | "openai"; anthropic = Anthropic + MiniMax compat
 
 
 def load_config() -> Config:
@@ -52,6 +53,9 @@ def load_config() -> Config:
     timeout_sec = int(os.getenv("NOTEBOOKLM_TIMEOUT_SEC", "120"))
     log_level = os.getenv("LOG_LEVEL", "INFO")
     notebooklm_skill_dir = os.getenv("NOTEBOOKLM_SKILL_DIR") or None
+    llm_provider = (os.getenv("WECHAT_WRITER_LLM_PROVIDER") or os.getenv("LLM_PROVIDER") or "anthropic").strip().lower()
+    if llm_provider not in ("anthropic", "openai"):
+        llm_provider = "anthropic"
 
     return Config(
         notebook_id=notebook_id,
@@ -61,4 +65,5 @@ def load_config() -> Config:
         timeout_sec=timeout_sec,
         log_level=log_level,
         notebooklm_skill_dir=notebooklm_skill_dir,
+        llm_provider=llm_provider,
     )
