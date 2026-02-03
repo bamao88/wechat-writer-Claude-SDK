@@ -74,22 +74,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CLI-01 | TBD | Pending |
-| NBK-01 | TBD | Pending |
-| NBK-02 | TBD | Pending |
-| RSH-01 | TBD | Pending |
-| RSH-02 | TBD | Pending |
-| OTL-01 | TBD | Pending |
-| ART-01 | TBD | Pending |
-| OUT-01 | TBD | Pending |
-| OUT-02 | TBD | Pending |
-| OUT-03 | TBD | Pending |
+| CLI-01 | Phase 1 | Pending |
+| NBK-01 | Phase 1 | Pending |
+| NBK-02 | Phase 1 | Pending |
+| RSH-01 | Phase 2 | Pending |
+| RSH-02 | Phase 2 | Pending |
+| OTL-01 | Phase 2 | Pending |
+| ART-01 | Phase 2 | Pending |
+| OUT-01 | Phase 3 | Pending |
+| OUT-02 | Phase 3 | Pending |
+| OUT-03 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10 ⚠️
+- Mapped to phases: 10
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-03*
-*Last updated: 2026-02-03 after initial definition*
+*Last updated: 2026-02-03 after roadmap creation*
