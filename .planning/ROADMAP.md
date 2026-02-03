@@ -44,10 +44,11 @@ Plans:
   3. Agent can generate an article outline based on research findings
   4. Agent can write a complete article following the generated outline
   5. Outline and article generation use existing prompts from `prompts/` directory (no new prompt generation logic required)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD during planning
+- [ ] 02-01-PLAN.md — Production prompt loading and workflow parameters
+- [ ] 02-02-PLAN.md — End-to-end workflow verification (human verify)
 
 ### Phase 3: Output System
 **Goal**: Complete workflow trace and final article are saved to persistent files
@@ -70,6 +71,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation Setup | 0/4 | Planned | - |
-| 2. Agent Workflow | 0/TBD | Not started | - |
+| 1. Foundation Setup | 3/4 | In progress | - |
+| 2. Agent Workflow | 0/2 | Planned | - |
 | 3. Output System | 0/TBD | Not started | - |
