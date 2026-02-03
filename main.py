@@ -36,6 +36,11 @@ def main() -> int:
     # Parse CLI arguments
     try:
         cli_result = parse_args(sys.argv)
+    except SystemExit as e:
+        # Re-raise help exits (code 0)
+        if e.code == 0:
+            return 0
+        return 1
     except CLIError as e:
         print(f"错误: {e}", file=sys.stderr)
         return 1

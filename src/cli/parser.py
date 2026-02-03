@@ -43,8 +43,27 @@ def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
         help="文章选题（必需）"
     )
 
-    # Parse args, skipping the first element if it looks like python/script
-    args_to_parse = argv[2:] if argv and len(argv) > 1 else []
+    # Parse args, skipping script name
+    # When called from test: argv = ['py', 'main.py', 'topic'] -> skip 2
+    # When called from script: argv = ['main.py', 'topic'] -> skip 1
+    # Default to sys.argv if not provided
+    if argv is None:
+        argv = sys.argv
+
+    # Determine how many elements to skip
+    if len(argv) > 2 and argv[1].endswith('.py'):
+        # Looks like ['python', 'main.py', ...] from test
+        args_to_parse = argv[2:]
+    elif len(argv) > 0:
+        # Looks like ['main.py', ...] from script execution
+        args_to_parse = argv[1:]
+    else:
+        args_to_parse = []
+
+    # Handle help flag early - argparse will print help and exit with 0
+    if "-h" in args_to_parse or "--help" in args_to_parse:
+        parser.print_help()
+        raise SystemExit(0)
 
     try:
         parsed = parser.parse_args(args_to_parse)
