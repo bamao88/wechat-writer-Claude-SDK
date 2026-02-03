@@ -44,32 +44,6 @@ wechat-writer-openai-agents/
 
 ---
 
-## 2. 状态管理逻辑 (`doc/state.md`)
-
-| 状态 | 英文 | 说明 |
-|------|------|------|
-| 🔄 进行中 | `In Progress` | 正在编写或调试 |
-| ✅ 已完成 | `Done` | 已通过 `test_real.py` 验证的任务 |
-
----
-
-## 3. 产出物管理规范 (`output/`)
-
-| 配置项 | 值 |
-|--------|-----|
-| **路径** | `./output/` |
-| **命名规范** | `YYYYMMDD_主题名称_文章.md` |
-
-**示例**：
-
-```
-output/
-├── 20260129_AI技术趋势_文章.md
-├── 20260130_量子计算入门_文章.md
-└── ...
-```
-
----
 
 ## 4. 核心模块说明
 
@@ -81,52 +55,3 @@ output/
 | `notebooklm_skill/` | NotebookLM Skill | `auth_manager.py`, `notebook_manager.py`, `ask_question.py` |
 | `tools.py` | 工具层 | `wrap_tool_with_latency()`, `get_registered_tools()`, `search_materials` |
 | `main.py` | 业务流程 | `run_workflow()`, `save_report()` |
-
----
-
-## 5. 快速启动建议
-
-```bash
-# Step 1: 创建文件夹
-mkdir -p doc output tests logs prompts
-
-# Step 2: 克隆 NotebookLM Skill（如尚未克隆）
-git clone --depth 1 https://github.com/PleasePrompto/notebooklm-skill.git notebooklm_skill
-
-# Step 3: 安装依赖
-pip install -r requirements.txt
-
-# Step 4: 运行测试
-pytest tests/ -v --ignore=tests/test_real.py
-
-# Step 5: 配置 NotebookLM 认证（一次性）
-python notebooklm_skill/scripts/run.py auth_manager.py setup
-
-# Step 6: 配置 MiniMax API Key 后运行真实 API 测试
-# 在 .env 文件中配置 MINIMAX_API_KEY
-pytest tests/test_real.py -v
-```
-
----
-
-## 6. 测试覆盖
-
-| 测试文件 | 测试内容 | 测试数量 |
-|----------|----------|----------|
-| `test_imports.py` | 依赖可导入性 | 5 |
-| `test_logger.py` | Trace ID 格式与唯一性 | 5 |
-| `test_minimax_connection.py` | Agent 创建与连接 | 6 |
-| `test_notebooklm.py` | NotebookLM Skill 集成测试 | 10 |
-| `test_tools.py` | 工具层与耗时采集 | 7 |
-| `test_agent_tools.py` | 工具挂载与调用 | 6 |
-| `test_main.py` | 主业务流程 | 7 |
-| `test_real.py` | 端到端真实 API 测试 | 5 |
-
-**总计**: 45+ 单元测试，覆盖所有核心功能
-
----
-
-## 相关文档
-
-- [`implementation-guide.md`](./implementation-guide.md) - 分阶段实施指南
-- [`state.md`](./state.md) - 进度与状态管理

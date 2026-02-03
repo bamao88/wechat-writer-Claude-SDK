@@ -5,25 +5,22 @@ Usage:
     python main.py "选题"
     python main.py "AI产品经理职业发展"
 
-This is Phase 1: Foundation Setup.
-- Validates CLI can receive topic
-- Validates Agent can call NotebookLM tool
-- Validates Agent receives search results
+Output (Phase 3): output/YYYY-MM-DD_HHMMSS_topic-slug_shortid/
+  - thought_trace.md  (workflow trace)
+  - article.md        (final article)
 """
+import os
 import sys
 
 from src.cli import parse_args, CLIError
 from src.config import load_config, ConfigError
 from src.utils import setup_logger, get_logger
 from src.agent import run_agent
+from src.output import create_output_dir, OutputTracer
 
 
 def print_progress(message: str) -> None:
-    """Print progress message to console.
-
-    Args:
-        message: Progress message to display.
-    """
+    """Print progress message to console."""
     print(message)
 
 
@@ -33,11 +30,9 @@ def main() -> int:
     Returns:
         Exit code (0 for success, 1 for error).
     """
-    # Parse CLI arguments
     try:
         cli_result = parse_args(sys.argv)
     except SystemExit as e:
-        # Re-raise help exits (code 0)
         if e.code == 0:
             return 0
         return 1
@@ -45,38 +40,49 @@ def main() -> int:
         print(f"错误: {e}", file=sys.stderr)
         return 1
 
-    # Load configuration
     try:
         config = load_config()
     except ConfigError as e:
         print(f"配置错误: {e}", file=sys.stderr)
         return 1
 
-    # Setup logging
-    logger = setup_logger(config.log_level)
+    setup_logger(config.log_level)
     log = get_logger(__name__)
-
     log.info(f"选题: {cli_result.topic}")
 
-    # Run agent
+    # Create output directory (Phase 3: fail fast)
+    output_base = os.getenv("OUTPUT_DIR", "output")
+    try:
+        run_dir = create_output_dir(cli_result.topic, base_dir=output_base)
+    except OSError as e:
+        print(f"无法创建输出目录: {e}", file=sys.stderr)
+        return 1
+
+    tracer = OutputTracer(run_dir)
+    tracer.start()
+
     print_progress(f"[选题] {cli_result.topic}")
+    print_progress(f"[输出] {run_dir}")
 
     result = run_agent(
         topic=cli_result.topic,
         config=config,
-        on_progress=print_progress
+        on_progress=print_progress,
+        tracer=tracer
     )
 
     if result.success:
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("Agent 输出:")
-        print("="*50)
+        print("=" * 50)
         print(result.output)
-        print("="*50)
+        print("=" * 50)
         print(f"工具调用次数: {result.tool_calls}")
+        print(f"输出目录: {run_dir}")
         return 0
     else:
         print(f"\n执行失败: {result.error}", file=sys.stderr)
+        tracer.close()
         return 1
 
 

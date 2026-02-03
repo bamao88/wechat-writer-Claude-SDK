@@ -1,6 +1,6 @@
 """Writing assistant agent using Claude SDK with tool support."""
 import os
-from typing import Optional, Callable
+from typing import Optional, Callable, TYPE_CHECKING
 from dataclasses import dataclass
 
 from anthropic import Anthropic
@@ -10,11 +10,12 @@ from src.tools.notebooklm import NotebookLMTool, ToolResult
 from src.utils.logger import get_logger
 from src.utils.prompt_loader import load_prompt, PromptError
 
+if TYPE_CHECKING:
+    from src.output.tracer import OutputTracer
+
 logger = get_logger(__name__)
 
-# Production workflow requires multiple research rounds
-# prompt_run.txt flow: 1st search -> 2nd search -> (optional 3rd) -> outline -> write
-# Each search + response = 2 iterations, so need ~15 for safety
+# prompt_run.txt flow: 1 tool call (search) -> then analysis + outline + full article in one turn
 MAX_ITERATIONS_PRODUCTION = 15
 
 # Articles can be 3000-5000 characters; with Chinese + formatting, need ~8000 tokens
@@ -47,21 +48,38 @@ class WritingAgent:
 
         Args:
             config: Application configuration.
-            api_key: Claude API key (defaults to CLAUDE_API_KEY env var).
-            base_url: Claude API base URL (defaults to CLAUDE_BASE_URL env var).
+            api_key: Claude API key (defaults to ANTHROPIC_API_KEY env var).
+            base_url: Claude API base URL (defaults to ANTHROPIC_BASE_URL env var).
             prompt_name: Name of prompt file in prompts/ (defaults to prompt_run.txt).
         """
         self.config = config
         self.tool = NotebookLMTool(config)
         self.prompt_name = prompt_name or DEFAULT_PROMPT
 
-        # Initialize Claude client
+        # Prefer project-prefixed env vars so .env overrides shell (e.g. shell may set ANTHROPIC_BASE_URL for Claude Code proxy)
+        base_url_val = (
+            base_url
+            or os.getenv("WECHAT_WRITER_ANTHROPIC_BASE_URL")
+            or os.getenv("ANTHROPIC_BASE_URL")
+        )
+        if base_url_val:
+            base_url_val = base_url_val.rstrip("/").strip()
+        api_key_val = (
+            api_key
+            or os.getenv("WECHAT_WRITER_ANTHROPIC_API_KEY")
+            or os.getenv("ANTHROPIC_API_KEY")
+        ) or ""
+        api_key_val = api_key_val.strip()
         self.client = Anthropic(
-            api_key=api_key or os.getenv("CLAUDE_API_KEY"),
-            base_url=base_url or os.getenv("CLAUDE_BASE_URL")
+            api_key=api_key_val,
+            base_url=base_url_val
         )
 
-        self.model = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
+        self.model = (
+            os.getenv("WECHAT_WRITER_ANTHROPIC_MODEL")
+            or os.getenv("ANTHROPIC_MODEL")
+            or "claude-haiku-4-5-20251001"
+        )
 
     def _handle_tool_call(self, tool_name: str, tool_input: dict) -> str:
         """Handle a tool call from Claude.
@@ -89,7 +107,8 @@ class WritingAgent:
         self,
         topic: str,
         system_prompt: Optional[str] = None,
-        on_progress: Optional[Callable[[str], None]] = None
+        on_progress: Optional[Callable[[str], None]] = None,
+        tracer: Optional["OutputTracer"] = None
     ) -> AgentResult:
         """Run the agent with a topic.
 
@@ -97,6 +116,7 @@ class WritingAgent:
             topic: Writing topic from user.
             system_prompt: Optional system prompt (overrides prompt file).
             on_progress: Optional callback for progress updates.
+            tracer: Optional OutputTracer for thought_trace.md and article.md.
 
         Returns:
             AgentResult with output and statistics.
@@ -139,17 +159,22 @@ class WritingAgent:
                     tools=tools
                 )
 
+                # Append agent output to trace (text parts of response)
+                final_text = ""
+                for block in response.content:
+                    if hasattr(block, "text"):
+                        final_text += block.text
+                if tracer and final_text:
+                    tracer.append_agent_output(final_text)
+
                 # Check stop reason
                 if response.stop_reason == "end_turn":
-                    # Agent finished
-                    final_text = ""
-                    for block in response.content:
-                        if hasattr(block, "text"):
-                            final_text += block.text
-
+                    # Agent finished: save article and return
+                    if tracer:
+                        tracer.save_article(final_text)
+                        tracer.close()
                     if on_progress:
                         on_progress("[完成]")
-
                     return AgentResult(
                         success=True,
                         output=final_text,
@@ -157,7 +182,7 @@ class WritingAgent:
                     )
 
                 elif response.stop_reason == "tool_use":
-                    # Handle tool calls
+                    # Handle tool calls and record in trace
                     assistant_content = response.content
                     tool_results = []
 
@@ -166,11 +191,15 @@ class WritingAgent:
                             tool_call_count += 1
                             if on_progress:
                                 on_progress(f"[工具] 调用 {block.name}...")
+                            if tracer:
+                                tracer.append_tool_call(block.name, getattr(block, "input", {}) or {})
 
                             result = self._handle_tool_call(
                                 block.name,
                                 block.input
                             )
+                            if tracer:
+                                tracer.append_tool_result(result)
 
                             tool_results.append({
                                 "type": "tool_result",
@@ -222,7 +251,8 @@ def run_agent(
     topic: str,
     config: Config,
     prompt_name: Optional[str] = None,
-    on_progress: Optional[Callable[[str], None]] = None
+    on_progress: Optional[Callable[[str], None]] = None,
+    tracer: Optional["OutputTracer"] = None
 ) -> AgentResult:
     """Convenience function to create and run an agent.
 
@@ -231,9 +261,10 @@ def run_agent(
         config: Application configuration.
         prompt_name: Optional prompt file name.
         on_progress: Optional progress callback.
+        tracer: Optional OutputTracer for thought_trace and article.
 
     Returns:
         AgentResult from agent execution.
     """
     agent = create_agent(config, prompt_name=prompt_name)
-    return agent.run(topic, on_progress=on_progress)
+    return agent.run(topic, on_progress=on_progress, tracer=tracer)

@@ -20,6 +20,7 @@ class Config:
     retry_delay_sec: int
     timeout_sec: int
     log_level: str
+    notebooklm_skill_dir: Optional[str]  # Skill root, default ~/.claude/skills/notebooklm
 
 
 def load_config() -> Config:
@@ -50,6 +51,7 @@ def load_config() -> Config:
     retry_delay_sec = int(os.getenv("NOTEBOOKLM_RETRY_DELAY_SEC", "2"))
     timeout_sec = int(os.getenv("NOTEBOOKLM_TIMEOUT_SEC", "120"))
     log_level = os.getenv("LOG_LEVEL", "INFO")
+    notebooklm_skill_dir = os.getenv("NOTEBOOKLM_SKILL_DIR") or None
 
     return Config(
         notebook_id=notebook_id,
@@ -57,5 +59,6 @@ def load_config() -> Config:
         retry_count=retry_count,
         retry_delay_sec=retry_delay_sec,
         timeout_sec=timeout_sec,
-        log_level=log_level
+        log_level=log_level,
+        notebooklm_skill_dir=notebooklm_skill_dir,
     )

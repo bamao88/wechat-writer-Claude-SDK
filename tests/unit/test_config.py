@@ -66,6 +66,22 @@ class TestLoadConfig:
         config = load_config()
         assert config.log_level == "DEBUG"
 
+    def test_loads_notebooklm_skill_dir_from_env(self, monkeypatch):
+        """Config loads NOTEBOOKLM_SKILL_DIR when set."""
+        monkeypatch.setenv("NOTEBOOK_ID", "id")
+        monkeypatch.setenv("NOTEBOOK_URL", "url")
+        monkeypatch.setenv("NOTEBOOKLM_SKILL_DIR", "/path/to/skill")
+        config = load_config()
+        assert config.notebooklm_skill_dir == "/path/to/skill"
+
+    def test_notebooklm_skill_dir_defaults_to_none(self, monkeypatch):
+        """Config has notebooklm_skill_dir None when not set."""
+        monkeypatch.setenv("NOTEBOOK_ID", "id")
+        monkeypatch.setenv("NOTEBOOK_URL", "url")
+        monkeypatch.setenv("NOTEBOOKLM_SKILL_DIR", "")  # empty so "or None" -> None
+        config = load_config()
+        assert config.notebooklm_skill_dir is None
+
     def test_missing_notebook_id_raises_error(self, monkeypatch):
         """Missing NOTEBOOK_ID raises ConfigError."""
         # Clear all NotebookLM env vars to ensure clean state
@@ -116,7 +132,8 @@ class TestConfig:
             retry_count=3,
             retry_delay_sec=2,
             timeout_sec=120,
-            log_level="INFO"
+            log_level="INFO",
+            notebooklm_skill_dir=None,
         )
         assert config.notebook_id == "id"
         assert config.timeout_sec == 120

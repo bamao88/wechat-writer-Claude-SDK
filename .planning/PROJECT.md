@@ -34,7 +34,7 @@
 ## Context
 
 **现有资源：**
-- notebooklm-mcp-cli 已验证可用
+- NotebookLM MCP：notebooklm-mcp-cli 已验证可用 — https://github.com/jacob-bd/notebooklm-mcp-cli
 - .env 中已有部分配置（NotebookLM 相关）
 - 资料来源为用户已创建的 NotebookLM 笔记本
 
@@ -52,7 +52,7 @@
 
 - **Tech stack**: Python — 现有技术栈
 - **API Provider**: v1 仅支持 Claude 原生 API（Anthropic SDK）— 聚焦快速验证
-- **Tool Integration**: NotebookLM 通过 MCP (notebooklm-mcp-cli) 集成 — 已验证方案
+- **Tool Integration**: NotebookLM 通过 MCP 集成 — notebooklm-mcp-cli (https://github.com/jacob-bd/notebooklm-mcp-cli)，包装成单一 Claude Tool 暴露给 Agent
 - **Architecture**: v1 单 Agent 架构 — 保持简单，验证流程
 - **Interface**: 简单 CLI 脚本 — 最小可用接口
 

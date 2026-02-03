@@ -27,3 +27,8 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+.nlm-cookies.txt
+.nlm_cookies.txt
+
+# Local output runs (may contain traces; keep output/.gitkeep)
+output/*/

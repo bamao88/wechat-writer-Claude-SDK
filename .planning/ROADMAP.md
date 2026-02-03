@@ -50,19 +50,16 @@ Plans:
 - [ ] 02-01-PLAN.md — Production prompt loading and workflow parameters
 - [ ] 02-02-PLAN.md — End-to-end workflow verification (human verify)
 
-### Phase 3: Output System
+### Phase 3: Output System ✅
 **Goal**: Complete workflow trace and final article are saved to persistent files
 **Depends on**: Phase 2
 **Requirements**: OUT-01, OUT-02
 **Success Criteria** (what must be TRUE):
-  1. `thought_trace.md` captures the complete workflow execution in real-time: every agent output, tool call (name + parameters), and tool result, appended chronologically with timestamps/sequence numbers
-  2. `article.md` contains the final complete article (title + body), extracted and saved when task completion is detected
-  3. Output directory structure: `output/YYYY-MM-DD_topic-slug_short-id/` with exactly two files: `thought_trace.md` and `article.md` (topic-slug and short-id prevent overwrites when running same topic multiple times per day)
-  4. All capture happens via SDK hooks/interception - no reliance on model outputting special markers like "【第一轮检索结果】"
-**Plans**: TBD
-
-Plans:
-- [ ] 03-01: TBD during planning
+  1. ✅ `thought_trace.md` captures the complete workflow execution in real-time: every agent output, tool call (name + parameters), and tool result, appended chronologically with timestamps/sequence numbers
+  2. ✅ `article.md` contains the final complete article (title + body), extracted and saved when task completion is detected
+  3. ✅ Output directory structure: `output/YYYY-MM-DD_HHMMSS_topic-slug_short-id/` with exactly two files: `thought_trace.md` and `article.md` (topic-slug via pypinyin, short-id prevents overwrites)
+  4. ✅ All capture via tracer passed into agent loop - no reliance on model output markers
+**Plans**: 03-01 implemented (output module + tracer + main wiring)
 
 ## Progress
 
@@ -73,4 +70,4 @@ Phases execute in numeric order: 1 -> 2 -> 3
 |-------|----------------|--------|-----------|
 | 1. Foundation Setup | 3/4 | In progress | - |
 | 2. Agent Workflow | 0/2 | Planned | - |
-| 3. Output System | 0/TBD | Not started | - |
+| 3. Output System | 1/1 | Complete | 03-01 |
