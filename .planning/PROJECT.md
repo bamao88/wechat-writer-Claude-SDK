@@ -1,59 +1,69 @@
-# WeChat Writer - Multi LLM Provider Support
+# AI 写作助手
 
 ## What This Is
 
-一个基于 OpenAI Agents SDK 的微信公众号文章生成器。当前仅支持 MiniMax API，需要扩展支持多个 LLM Provider（OpenAI、Claude 等），并通过命令行交互实现灵活选择模型运行。
+一个基于 Claude SDK 的 Python CLI 写作助手，帮助用户通过「选题调研 → 列大纲 → 写文章」的流程生成文章。通过 NotebookLM MCP Tool 搜索已有笔记本资料，输出包含调研结果、大纲和最终文章的完整写作过程。个人工具，命令行调用。
 
 ## Core Value
 
-用户可以通过简单的命令行交互，选择一个或多个模型为同一选题生成文章，方便对比不同模型的输出质量。
+能够调用 NotebookLM 搜索资料并完成端到端的文章生成流程，验证「研究 → 规划 → 写作」的完整闭环可行性。
 
 ## Requirements
 
 ### Validated
 
-- ✓ 基于 OpenAI Agents SDK 的 Agent 架构 — existing
-- ✓ MiniMax API 集成 — existing
-- ✓ 文章搜索和生成工作流 — existing
-- ✓ 文章保存到本地文件 — existing
+(None yet — ship to validate)
 
 ### Active
 
-- [ ] 抽象 LLM Provider 接口，支持多 Provider 扩展
-- [ ] 支持 OpenAI API（第三方中转）
-- [ ] 支持 Claude API（第三方中转）
-- [ ] 命令行交互式模型选择
-- [ ] 支持同时运行多个模型对比
-- [ ] 配置管理（.env 多 Provider 配置）
+- [ ] CLI 能够接收选题参数并启动写作流程
+- [ ] Agent 能够调用 NotebookLM MCP Tool 搜索相关资料
+- [ ] Agent 能够基于调研结果生成文章大纲
+- [ ] Agent 能够基于大纲生成完整文章内容
+- [ ] 系统保存中间过程到文件（调研结果、大纲、最终文章）
+- [ ] 使用 Claude SDK 原生 API 完成真实 API 闭环
 
 ### Out of Scope
 
-- Web UI 界面 — 保持 CLI 工具定位
-- 模型输出自动对比/评分 — 用户自行对比
-- 支持非 OpenAI 兼容格式的 API — 仅支持 OpenAI 兼容格式
-- 实时流式输出 — 保持现有批量生成模式
+- LiteLLM 多模型支持 — v2 功能，v1 聚焦 Claude 原生 API 验证
+- 多 Agent 架构（研究员/写作者分离）— v1 用单 Agent 验证流程可行性
+- 复杂 CLI 参数（--output、--model 等）— v1 保持最简调用方式
+- API 服务或 SDK 封装 — v1 仅需 CLI 工具
+- 网页抓取或本地文档搜索 — v1 仅使用已有的 NotebookLM 笔记本
 
 ## Context
 
-- 现有代码使用 `openai-agents` SDK 和 MiniMax API
-- MiniMax 使用 OpenAI 兼容格式（base_url + api_key）
-- 用户的 OpenAI/Claude 都是第三方中转服务，需要提供自定义 base_url
-- 需要保持向后兼容，现有功能不受影响
+**现有资源：**
+- notebooklm-mcp-cli 已验证可用
+- .env 中已有部分配置（NotebookLM 相关）
+- 资料来源为用户已创建的 NotebookLM 笔记本
+
+**使用场景：**
+- 文章类型：综合类型（技术博客、行业分析、知识总结等）
+- 用户：个人使用，命令行工具
+- 调用方式：`python main.py "选题"`
+
+**架构演进路径：**
+- v1：单 Agent + Claude 原生 API（快速验证原型）
+- v2：引入 LiteLLM 支持 OpenAI、Minimax 等多模型
+- v3：多 Agent 架构优化（研究员 Agent + 写作 Agent）
 
 ## Constraints
 
-- **Tech stack**: Python, openai-agents SDK, OpenAI 兼容 API
-- **Compatibility**: 保持现有 main.py 接口可用
-- **Configuration**: 使用 .env 文件管理多 Provider 配置
-- **CLI**: 使用内置 input 或简单库实现交互，避免过重依赖
+- **Tech stack**: Python — 现有技术栈
+- **API Provider**: v1 仅支持 Claude 原生 API（Anthropic SDK）— 聚焦快速验证
+- **Tool Integration**: NotebookLM 通过 MCP (notebooklm-mcp-cli) 集成 — 已验证方案
+- **Architecture**: v1 单 Agent 架构 — 保持简单，验证流程
+- **Interface**: 简单 CLI 脚本 — 最小可用接口
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| 使用 Provider 抽象模式 | 统一接口，便于扩展新模型 | — Pending |
-| 保持 .env 配置方式 | 与现有项目一致，用户熟悉 | — Pending |
-| 内置 input 实现交互 | 避免额外依赖，保持轻量 | — Pending |
+| 使用 Claude 原生 SDK（非 LiteLLM） | v1 聚焦快速验证 API 闭环，避免多层抽象复杂度 | — Pending |
+| NotebookLM 通过 MCP 包装成 Claude Tool | 标准化接口，利用 Claude SDK 的 tool use 能力 | — Pending |
+| 单 Agent 架构 | 验证完整流程可行性，为后续多 Agent 优化打基础 | — Pending |
+| 保存中间过程到文件 | 便于调试和观察 Agent 推理过程 | — Pending |
 
 ---
-*Last updated: 2025-01-30 after initialization*
+*Last updated: 2026-02-03 after initialization*
