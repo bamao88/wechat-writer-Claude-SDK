@@ -47,14 +47,14 @@ Plans:
 - [ ] 02-01: TBD during planning
 
 ### Phase 3: Output System
-**Goal**: All workflow outputs are saved to persistent files with a clear directory and naming structure
+**Goal**: Complete workflow trace and final article are saved to persistent files
 **Depends on**: Phase 2
-**Requirements**: OUT-01, OUT-02, OUT-03
+**Requirements**: OUT-01, OUT-02
 **Success Criteria** (what must be TRUE):
-  1. Research report is saved to file after research phase completes
-  2. Article outline is saved to file after outline generation completes
-  3. Final article is saved to file after writing completes
-  4. Output directory structure: `output/YYYY-MM-DD_topic-slug_short-id/` with exactly three files: `research.md`, `outline.md`, `article.md` (topic-slug and short-id prevent overwrites when running same topic multiple times per day)
+  1. `thought_trace.md` captures the complete workflow execution in real-time: every agent output, tool call (name + parameters), and tool result, appended chronologically with timestamps/sequence numbers
+  2. `article.md` contains the final complete article (title + body), extracted and saved when task completion is detected
+  3. Output directory structure: `output/YYYY-MM-DD_topic-slug_short-id/` with exactly two files: `thought_trace.md` and `article.md` (topic-slug and short-id prevent overwrites when running same topic multiple times per day)
+  4. All capture happens via SDK hooks/interception - no reliance on model outputting special markers like "【第一轮检索结果】"
 **Plans**: TBD
 
 Plans:
