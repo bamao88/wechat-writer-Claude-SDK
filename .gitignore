@@ -1,43 +1,25 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
 *.egg-info/
-.installed.cfg
-*.egg
+dist/
+build/
 
 # Virtual environments
-.venv/
 venv/
-ENV/
+.venv/
 env/
+ENV/
 
-# Environment variables (sensitive!)
+# Environment variables
 .env
-.env.local
-.env.*.local
-
-# NotebookLM browser state (contains login credentials)
-notebooklm_skill/data/browser_state/
-notebooklm_skill/.venv/
 
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
@@ -45,15 +27,3 @@ notebooklm_skill/.venv/
 # OS
 .DS_Store
 Thumbs.db
-
-# Logs
-logs/
-*.log
-
-# Output files (optional - uncomment if you don't want to track generated articles)
-# output/
-
-# Pytest
-.pytest_cache/
-.coverage
-htmlcov/
