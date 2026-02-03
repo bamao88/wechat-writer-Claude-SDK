@@ -68,7 +68,18 @@ class TestLoadConfig:
 
     def test_missing_notebook_id_raises_error(self, monkeypatch):
         """Missing NOTEBOOK_ID raises ConfigError."""
+        # Clear all NotebookLM env vars to ensure clean state
         monkeypatch.delenv("NOTEBOOK_ID", raising=False)
+        monkeypatch.delenv("NOTEBOOK_URL", raising=False)
+        monkeypatch.delenv("NOTEBOOKLM_RETRY_COUNT", raising=False)
+        monkeypatch.delenv("NOTEBOOKLM_RETRY_DELAY_SEC", raising=False)
+        monkeypatch.delenv("NOTEBOOKLM_TIMEOUT_SEC", raising=False)
+        monkeypatch.delenv("LOG_LEVEL", raising=False)
+
+        # Mock load_dotenv to do nothing
+        monkeypatch.setattr("src.config.settings.load_dotenv", lambda: None)
+
+        # Set only NOTEBOOK_URL
         monkeypatch.setenv("NOTEBOOK_URL", "url")
         with pytest.raises(ConfigError) as exc_info:
             load_config()
@@ -76,8 +87,19 @@ class TestLoadConfig:
 
     def test_missing_notebook_url_raises_error(self, monkeypatch):
         """Missing NOTEBOOK_URL raises ConfigError."""
-        monkeypatch.setenv("NOTEBOOK_ID", "id")
+        # Clear all NotebookLM env vars to ensure clean state
+        monkeypatch.delenv("NOTEBOOK_ID", raising=False)
         monkeypatch.delenv("NOTEBOOK_URL", raising=False)
+        monkeypatch.delenv("NOTEBOOKLM_RETRY_COUNT", raising=False)
+        monkeypatch.delenv("NOTEBOOKLM_RETRY_DELAY_SEC", raising=False)
+        monkeypatch.delenv("NOTEBOOKLM_TIMEOUT_SEC", raising=False)
+        monkeypatch.delenv("LOG_LEVEL", raising=False)
+
+        # Mock load_dotenv to do nothing
+        monkeypatch.setattr("src.config.settings.load_dotenv", lambda: None)
+
+        # Set only NOTEBOOK_ID
+        monkeypatch.setenv("NOTEBOOK_ID", "id")
         with pytest.raises(ConfigError) as exc_info:
             load_config()
         assert "NOTEBOOK_URL" in str(exc_info.value)
