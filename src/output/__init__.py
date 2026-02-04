@@ -20,9 +20,23 @@ def topic_to_slug(topic: str) -> str:
     return slug[:80] or "topic"
 
 
-def create_output_dir(topic: str, base_dir: str = "output") -> Path:
-    """Create output run directory: base_dir/YYYY-MM-DD_HHMMSS_slug_shortid.
+def model_to_slug(model_name: str) -> str:
+    """Convert model name to dir-safe slug (alnum and hyphens, max 40 chars)."""
+    if not model_name or not str(model_name).strip():
+        return ""
+    s = "".join(c if c.isalnum() or c in "-_" else "-" for c in str(model_name).strip())
+    s = "-".join(filter(None, s.split("-")))
+    return s[:40] or "model"
 
+
+def create_output_dir(
+    topic: str,
+    base_dir: str = "output",
+    model_name: str | None = None,
+) -> Path:
+    """Create output run directory: base_dir/YYYY-MM-DD_HHMMSS_slug_[model_]shortid.
+
+    When model_name is given, include model slug in dir name.
     Fail fast if creation fails.
     """
     base = Path(base_dir)
@@ -32,9 +46,13 @@ def create_output_dir(topic: str, base_dir: str = "output") -> Path:
     time = now.strftime("%H%M%S")
     slug = topic_to_slug(topic)
     short_id = secrets.token_hex(3)
-    run_dir = base / f"{date}_{time}_{slug}_{short_id}"
+    if model_name and model_to_slug(model_name):
+        model_slug = model_to_slug(model_name)
+        run_dir = base / f"{date}_{time}_{slug}_{model_slug}_{short_id}"
+    else:
+        run_dir = base / f"{date}_{time}_{slug}_{short_id}"
     run_dir.mkdir(parents=True, exist_ok=False)
     return run_dir
 
 
-__all__ = ["OutputTracer", "create_output_dir", "topic_to_slug"]
+__all__ = ["OutputTracer", "create_output_dir", "topic_to_slug", "model_to_slug"]

@@ -5,9 +5,10 @@ Usage:
     python main.py "选题"
     python main.py "AI产品经理职业发展"
 
-Output (Phase 3): output/YYYY-MM-DD_HHMMSS_topic-slug_shortid/
+Output (Phase 3): output/YYYY-MM-DD_HHMMSS_topic-slug_model-slug_shortid/
   - thought_trace.md  (workflow trace)
   - article.md        (final article)
+  (model-slug 为当前 LLM 模型名，如 MiniMax-M2-1、gpt-4o)
 """
 import os
 import sys
@@ -16,6 +17,7 @@ from src.cli import parse_args, CLIError
 from src.config import load_config, ConfigError
 from src.utils import setup_logger, get_logger
 from src.agent import run_agent
+from src.agent.backends import get_model_name
 from src.output import create_output_dir, OutputTracer
 
 
@@ -50,10 +52,11 @@ def main() -> int:
     log = get_logger(__name__)
     log.info(f"选题: {cli_result.topic}")
 
-    # Create output directory (Phase 3: fail fast)
+    # Create output directory (Phase 3: fail fast; include model name in dir)
     output_base = os.getenv("OUTPUT_DIR", "output")
+    model_name = get_model_name(config.llm_provider)
     try:
-        run_dir = create_output_dir(cli_result.topic, base_dir=output_base)
+        run_dir = create_output_dir(cli_result.topic, base_dir=output_base, model_name=model_name)
     except OSError as e:
         print(f"无法创建输出目录: {e}", file=sys.stderr)
         return 1

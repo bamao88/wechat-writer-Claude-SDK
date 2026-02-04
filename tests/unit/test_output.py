@@ -2,7 +2,7 @@
 import pytest
 from pathlib import Path
 
-from src.output import create_output_dir, topic_to_slug, OutputTracer
+from src.output import create_output_dir, topic_to_slug, model_to_slug, OutputTracer
 
 
 class TestTopicToSlug:
@@ -17,6 +17,16 @@ class TestTopicToSlug:
         assert "ai" in slug or "product" in slug
 
 
+class TestModelToSlug:
+    def test_model_slug(self):
+        assert "MiniMax-M2-1" in model_to_slug("MiniMax-M2.1") or "minimax" in model_to_slug("MiniMax-M2.1").lower()
+    def test_empty_returns_empty(self):
+        assert model_to_slug("") == ""
+    def test_gpt_model(self):
+        s = model_to_slug("gpt-4o")
+        assert "gpt" in s and "4o" in s
+
+
 class TestCreateOutputDir:
     def test_creates_under_base(self, tmp_path):
         run_dir = create_output_dir("测试", base_dir=str(tmp_path))
@@ -28,6 +38,11 @@ class TestCreateOutputDir:
         d1 = create_output_dir("选题", base_dir=str(tmp_path))
         d2 = create_output_dir("选题", base_dir=str(tmp_path))
         assert d1 != d2
+
+    def test_dir_includes_model_slug_when_given(self, tmp_path):
+        run_dir = create_output_dir("学习硅谷", base_dir=str(tmp_path), model_name="MiniMax-M2.1")
+        assert run_dir.is_dir()
+        assert "MiniMax-M2-1" in run_dir.name or "minimax" in run_dir.name.lower()
 
 
 class TestOutputTracer:
