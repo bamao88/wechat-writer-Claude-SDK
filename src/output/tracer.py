@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 TRACE_ENTRY = "## [{seq:03d}] [{ts}] {kind}\n\n"
+TRACE_ENTRY_WITH_AGENT = "## [{seq:03d}] [{ts}] [{agent}] {kind}\n\n"
 TOOL_RESULT_TRUNCATE = 500
 WRITE_RETRIES = 3
 WRITE_RETRY_DELAY = 0.2
@@ -50,19 +51,25 @@ class OutputTracer:
         header = "# Thought Trace\n\n"
         self._append_to_trace(header)
 
-    def append_agent_output(self, text: str) -> None:
-        """Append one agent text output block."""
+    def append_agent_output(self, text: str, agent_name: Optional[str] = None) -> None:
+        """Append one agent text output block. Optional agent_name shows in header as [Agent名]."""
         self._seq += 1
         kind = "Agent Output"
-        block = TRACE_ENTRY.format(seq=self._seq, ts=self._timestamp(), kind=kind)
+        if agent_name and agent_name.strip():
+            block = TRACE_ENTRY_WITH_AGENT.format(seq=self._seq, ts=self._timestamp(), agent=agent_name.strip(), kind=kind)
+        else:
+            block = TRACE_ENTRY.format(seq=self._seq, ts=self._timestamp(), kind=kind)
         block += "> " + text.replace("\n", "\n> ") + "\n\n"
         self._append_to_trace(block)
 
-    def append_tool_call(self, name: str, params: dict) -> None:
-        """Append one tool call (name + key params only)."""
+    def append_tool_call(self, name: str, params: dict, agent_name: Optional[str] = None) -> None:
+        """Append one tool call (name + key params only). Optional agent_name shows in header as [Agent名]."""
         self._seq += 1
         kind = "Tool Call"
-        block = TRACE_ENTRY.format(seq=self._seq, ts=self._timestamp(), kind=kind)
+        if agent_name and agent_name.strip():
+            block = TRACE_ENTRY_WITH_AGENT.format(seq=self._seq, ts=self._timestamp(), agent=agent_name.strip(), kind=kind)
+        else:
+            block = TRACE_ENTRY.format(seq=self._seq, ts=self._timestamp(), kind=kind)
         block += "```\n"
         block += f"tool: {name}\n"
         for k, v in params.items():
@@ -73,11 +80,14 @@ class OutputTracer:
         block += "```\n\n"
         self._append_to_trace(block)
 
-    def append_tool_result(self, content: str) -> None:
-        """Append one tool result (truncate long content, rest in details)."""
+    def append_tool_result(self, content: str, agent_name: Optional[str] = None) -> None:
+        """Append one tool result (truncate long content, rest in details). Optional agent_name shows in header as [Agent名]."""
         self._seq += 1
         kind = "Tool Result"
-        block = TRACE_ENTRY.format(seq=self._seq, ts=self._timestamp(), kind=kind)
+        if agent_name and agent_name.strip():
+            block = TRACE_ENTRY_WITH_AGENT.format(seq=self._seq, ts=self._timestamp(), agent=agent_name.strip(), kind=kind)
+        else:
+            block = TRACE_ENTRY.format(seq=self._seq, ts=self._timestamp(), kind=kind)
         if len(content) <= TOOL_RESULT_TRUNCATE:
             block += "<details><summary>内容</summary>\n\n" + content + "\n\n</details>\n\n"
         else:
