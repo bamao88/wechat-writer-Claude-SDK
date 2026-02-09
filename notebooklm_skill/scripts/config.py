@@ -41,4 +41,5 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 # Timeouts
 LOGIN_TIMEOUT_MINUTES = 10
 QUERY_TIMEOUT_SECONDS = 120
-PAGE_LOAD_TIMEOUT = 30000
+# 首次打开 NotebookLM 页面超时（网络慢或需代理时 30s 易超时，改为 90s）
+PAGE_LOAD_TIMEOUT = 90000

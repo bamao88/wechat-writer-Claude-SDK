@@ -24,7 +24,7 @@ from patchright.sync_api import sync_playwright, BrowserContext
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import BROWSER_STATE_DIR, STATE_FILE, AUTH_INFO_FILE, DATA_DIR
+from config import BROWSER_STATE_DIR, STATE_FILE, AUTH_INFO_FILE, DATA_DIR, PAGE_LOAD_TIMEOUT
 from browser_utils import BrowserFactory
 
 
@@ -109,9 +109,13 @@ class AuthManager:
                 headless=headless
             )
 
-            # Navigate to NotebookLM
+            # Navigate to NotebookLM (long timeout: slow network or proxy may need 60–90s)
             page = context.new_page()
-            page.goto("https://notebooklm.google.com", wait_until="domcontentloaded")
+            page.goto(
+                "https://notebooklm.google.com",
+                wait_until="domcontentloaded",
+                timeout=PAGE_LOAD_TIMEOUT,
+            )
 
             # Check if already authenticated
             if "notebooklm.google.com" in page.url and "accounts.google.com" not in page.url:
@@ -257,7 +261,7 @@ class AuthManager:
 
             # Try to access NotebookLM
             page = context.new_page()
-            page.goto("https://notebooklm.google.com", wait_until="domcontentloaded", timeout=30000)
+            page.goto("https://notebooklm.google.com", wait_until="domcontentloaded", timeout=PAGE_LOAD_TIMEOUT)
 
             # Check if we can access NotebookLM
             if "notebooklm.google.com" in page.url and "accounts.google.com" not in page.url:

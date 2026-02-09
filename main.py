@@ -44,12 +44,20 @@ def main() -> int:
         print(f"错误: {e}", file=sys.stderr)
         return 1
 
-    # ---------- 2. 加载配置（.env + 环境变量） ----------
+    # ---------- 2. 加载配置（.env + 环境变量）；命令行可覆盖 provider/model ----------
+    if cli_result.provider:
+        os.environ["LLM_PROVIDER"] = cli_result.provider
     try:
         config = load_config()
     except ConfigError as e:
         print(f"配置错误: {e}", file=sys.stderr)
         return 1
+    if cli_result.model:
+        p = (cli_result.provider or config.llm_provider or "").strip().lower()
+        if p == "openai":
+            os.environ["OPENAI_MODEL"] = cli_result.model
+        else:
+            os.environ["ANTHROPIC_MODEL"] = cli_result.model
 
     setup_logger(config.log_level)
     log = get_logger(__name__)

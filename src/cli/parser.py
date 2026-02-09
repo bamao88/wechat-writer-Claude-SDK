@@ -14,6 +14,8 @@ class CLIError(Exception):
 class CLIResult:
     """Result of CLI argument parsing."""
     topic: str
+    provider: Optional[str]  # openai | anthropic，None 表示用 .env
+    model: Optional[str]     # 模型名，None 表示用 .env
 
 
 def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
@@ -21,10 +23,10 @@ def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
 
     Args:
         argv: Command-line arguments (defaults to sys.argv).
-              Expected format: ["python", "main.py", "选题"]
+              Expected format: ["python", "main.py", "选题"] 或带 --provider/--model
 
     Returns:
-        CLIResult with parsed topic.
+        CLIResult with topic, optional provider and model.
 
     Raises:
         CLIError: If arguments are invalid.
@@ -33,7 +35,12 @@ def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
     parser = argparse.ArgumentParser(
         prog="python main.py",
         description="AI写作助手 - 基于NotebookLM资料生成文章",
-        epilog="示例: python main.py \"AI产品经理职业发展\"",
+        epilog=(
+            "示例:\n"
+            "  python main.py \"AI产品经理职业发展\"\n"
+            "  python main.py --provider openai --model gpt-5.2-chat \"选题\"\n"
+            "  python main.py -p openai -m gpt-4o \"选题\""
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
@@ -41,6 +48,17 @@ def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
         "topic",
         nargs="?",  # Optional to handle missing case manually
         help="文章选题（必需）"
+    )
+    parser.add_argument(
+        "-p", "--provider",
+        choices=["openai", "anthropic"],
+        default=None,
+        help="LLM 提供商：openai（含 Azure）或 anthropic；不填则用 .env 中 LLM_PROVIDER"
+    )
+    parser.add_argument(
+        "-m", "--model",
+        default=None,
+        help="模型名称（如 gpt-5.2-chat、gpt-4o）；不填则用 .env 中对应 provider 的 MODEL"
     )
 
     # Parse args, skipping script name
@@ -82,7 +100,10 @@ def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
     if not topic:
         raise CLIError("错误：选题不能为空，请提供有效的文章主题")
 
-    return CLIResult(topic=topic)
+    provider = (parsed.provider or "").strip() or None
+    model = (parsed.model or "").strip() or None
+
+    return CLIResult(topic=topic, provider=provider, model=model)
 
 
 def main():
