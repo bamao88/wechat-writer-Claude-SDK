@@ -16,6 +16,7 @@ class CLIResult:
     topic: str
     provider: Optional[str]  # openai | anthropic，None 表示用 .env
     model: Optional[str]     # 模型名，None 表示用 .env
+    flow: str = "hub-spoke"  # hub-spoke | insight-alignment
 
 
 def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
@@ -37,7 +38,8 @@ def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
         description="AI写作助手 - 基于NotebookLM资料生成文章",
         epilog=(
             "示例:\n"
-            "  python main.py \"AI产品经理职业发展\"\n"
+            "  python main.py \"AI产品经理职业发展\"  # 默认使用 hub-spoke 流程\n"
+            "  python main.py --flow insight-alignment \"如何提升个人品牌\"  # 使用旧流程\n"
             "  python main.py --provider openai --model gpt-5.2-chat \"选题\"\n"
             "  python main.py -p openai -m gpt-4o \"选题\""
         ),
@@ -59,6 +61,12 @@ def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
         "-m", "--model",
         default=None,
         help="模型名称（如 gpt-5.2-chat、gpt-4o）；不填则用 .env 中对应 provider 的 MODEL"
+    )
+    parser.add_argument(
+        "-f", "--flow",
+        choices=["insight-alignment", "hub-spoke"],
+        default="hub-spoke",
+        help="写作流程：hub-spoke（默认，自动化+质量循环）或 insight-alignment（洞察对齐）"
     )
 
     # Parse args, skipping script name
@@ -102,19 +110,7 @@ def parse_args(argv: Optional[List[str]] = None) -> CLIResult:
 
     provider = (parsed.provider or "").strip() or None
     model = (parsed.model or "").strip() or None
+    flow = parsed.flow or "hub-spoke"
 
-    return CLIResult(topic=topic, provider=provider, model=model)
+    return CLIResult(topic=topic, provider=provider, model=model, flow=flow)
 
-
-def main():
-    """Main entry point for CLI testing."""
-    try:
-        result = parse_args(sys.argv)
-        print(f"选题: {result.topic}")
-    except CLIError as e:
-        print(f"错误: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

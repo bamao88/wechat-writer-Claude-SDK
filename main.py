@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """AI 写作助手 - 命令行入口。
 
-流程：洞察对齐（洞察顾问 → 总编辑 → 私域挖掘员(可选) → 风格执笔人）。
+支持两种流程：
+1. hub-spoke（默认）：Planner → Miner/Web → Orchestrator → Writer → Critic (质量循环)
+2. insight-alignment：洞察顾问 → 总编辑 → 私域挖掘员(可选) → 风格执笔人
 
 用法:
-    python main.py "选题"
-    python main.py "AI产品经理职业发展"
+    python main.py "选题"  # 默认 hub-spoke 流程
+    python main.py --flow insight-alignment "如何提升个人品牌"  # 使用旧流程
+    python main.py -p openai "AI产品经理职业发展"
 
 输出目录: output/YYYY-MM-DD_HHMMSS_选题拼音_模型名_短id/
   - thought_trace.md  流程轨迹
@@ -18,6 +21,7 @@ from src.cli import parse_args, CLIError
 from src.config import load_config, ConfigError
 from src.utils import setup_logger, get_logger
 from src.agent.insight_alignment import run_insight_alignment_flow
+from src.agent.hub_spoke.flow import run_hub_spoke_flow
 from src.agent.backends import get_model_name
 from src.output import create_output_dir, OutputTracer
 
@@ -79,16 +83,29 @@ def main() -> int:
     tracer.start()
 
     print_progress(f"[选题] {cli_result.topic}")
+    print_progress(f"[流程] {cli_result.flow}")
     print_progress(f"[输出] {run_dir}")
 
-    # ---------- 5. 执行洞察对齐流程 ----------
-    # 流程：洞察顾问 → 总编辑 → 私域挖掘员(可选) → 风格执笔人；Agent 逻辑见 src/agent/insight_alignment.py，详见 doc/refer.md
-    result = run_insight_alignment_flow(
-        topic=cli_result.topic,
-        config=config,
-        on_progress=print_progress,
-        tracer=tracer,
-    )
+    # ---------- 5. 根据 flow 参数执行相应的流程 ----------
+    if cli_result.flow == "hub-spoke":
+        # Hub-Spoke 流程（默认）：Planner → Miner/Web → Orchestrator → Writer → Critic
+        # 详见 doc/hub_spoke_实施计划_TDD.md
+        result = run_hub_spoke_flow(
+            topic=cli_result.topic,
+            user_context="",  # 暂不支持从命令行传入 user_context
+            config=config,
+            on_progress=print_progress,
+            tracer=tracer,
+        )
+    else:
+        # 洞察对齐流程：洞察顾问 → 总编辑 → 私域挖掘员(可选) → 风格执笔人
+        # 流程逻辑见 src/agent/insight_alignment.py，详见 doc/refer.md
+        result = run_insight_alignment_flow(
+            topic=cli_result.topic,
+            config=config,
+            on_progress=print_progress,
+            tracer=tracer,
+        )
 
     # ---------- 6. 根据执行结果输出并返回退出码 ----------
     if result.success:

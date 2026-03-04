@@ -32,3 +32,11 @@ Thumbs.db
 
 # Local output runs (may contain traces; keep output/.gitkeep)
 output/*/
+
+# Test output runs
+outputs/
+
+# Temporary debug / last-run input files
+ghostwriter_last_input.json
+ghostwriter_last_input.txt
+hub_spoke_writer_input.txt

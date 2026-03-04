@@ -223,8 +223,52 @@ class OutputTracer:
             block += "<details><summary>完整内容</summary>\n\n" + rest + "\n\n</details>\n\n"
         self._append_to_trace(block)
 
-    def save_article(self, content: str) -> Optional[str]:
-        """Save final article to article.md. Returns error message on failure (soft fail)."""
+    def append_critic_result(self, cycle: int, score: int, passed: bool, reason: str) -> None:
+        """Append critic evaluation result to trace file.
+
+        Args:
+            cycle: The rewrite cycle number (1, 2, 3, ...)
+            score: Critic score (0-10)
+            passed: Whether the article passed quality check
+            reason: Reason for the score/decision
+        """
+        self._seq += 1
+        kind = "Critic Result"
+
+        block = TRACE_ENTRY.format(seq=self._seq, ts=self._timestamp(), kind=kind)
+
+        # Format as a table for better readability
+        status_text = "✅ 通过" if passed else "❌ 未通过"
+        block += f"**Cycle {cycle}** | 评分: **{score}/10** | 状态: {status_text}\n\n"
+
+        # Add reason in a details block if it's long
+        if len(reason) > 100:
+            block += f"**原因**: <details><summary>展开查看</summary>\n\n{reason}\n\n</details>\n\n"
+        else:
+            block += f"**原因**: {reason}\n\n"
+
+        self._append_to_trace(block)
+
+    def save_article(self, content: str, degraded: bool = False) -> Optional[str]:
+        """Save final article to article.md. Returns error message on failure (soft fail).
+
+        Args:
+            content: The article content to save
+            degraded: If True, adds a warning header indicating quality check failed
+
+        Returns:
+            Error message string if save failed, None if successful
+        """
+        # Add degraded warning if needed
+        if degraded:
+            warning = (
+                "⚠️ **质量检查未通过警告**\n\n"
+                "本文经过多轮重写仍未达到质量标准（超出重写次数上限）。\n"
+                "建议人工审核后再发布。\n\n"
+                "---\n\n"
+            )
+            content = warning + content
+
         for attempt in range(WRITE_RETRIES):
             try:
                 with open(self.article_path, "w", encoding="utf-8") as f:
